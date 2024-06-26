@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>ReviewPulse</title>
+    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.1/css/dataTables.dataTables.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css"/>
+    <link rel="icon" href="favicon.ico"/>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.1/js/dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
+</head>
+<body>
+    <div class="container-fluid h-100">
+        <div class="row h-100">
+          <div class="side-bar col-md-2">
+            <h2>Filters</h2>
+            <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle" id="versionsDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="true" aria-haspopup="true">Select Versions </button>
+              <ul class="dropdown-menu checkbox-menu allow-focus" aria-labelledby="versionsDropdown" id="versions"><a class="clear" href="#" style="cursor: pointer; padding:10px" onclick="clearVersion()">clear</a></ul>
+            </div>
+            <!-- <div class="dropdown">
+              <button class="btn btn-light dropdown-toggle" id="issueDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="true" aria-haspopup="true">Select Issues </button>
+                <ul class="dropdown-menu checkbox-menu allow-focus" aria-labelledby="issueDropdown" id="issues">
+                <a class="clear" href="#" style="cursor: pointer; padding:10px" onclick="clearIssues()">clear</a>
+                <li><label><input type="checkbox" value="content">Content and Media Issues</label></li>
+                <li><label><input type="checkbox" value="functionality">Functionality Issues</label></li>
+                <li><label><input type="checkbox" value="performance">Performance Issues</label></li>
+                <li><label><input type="checkbox" value="design">UI / Design Issues</label></li>
+                <li><label><input type="checkbox" value="crashes">Crashing Issues</label></li>
+                <li><label><input type="checkbox" value="userExperience">User Experience Issues</label></li>
+                <li><label><input type="checkbox" value="Security">Security Related Issues</label></li>
+                <li><label><input type="checkbox" value="developerRelated">Developer Related Issues</label></li>
+                </ul>
+            </div> -->
+            <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#tableModal" style="width:100%">View User Reviews</button>
+            <div class="modal fade" id="tableModal" tabindex="-1" role="dialog" aria-labelledby="tableModalLabel" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="tableModalLabel">User Reviews</h5>
+                    <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true"><i class="bi bi-x-square-fill" style="color: darkred;"></i></span></button>
+                  </div>
+                  <div class="modal-body">
+                    <table id="myTable" style="width:100%"></table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="main-content col-md-10">
+            <div class="card h-25" id="health">
+              <div class="card-header">
+                <h2>Health Metrics</h2>
+              </div>
+              <div class="card-body row">
+                <div class="col-md-3">
+                  <h2>Sentiment</h2>
+                  <h3 id="sentiment"></h3>
+                </div>
+                <div class="col-md-3">
+                  <h2>Toxicity</h2>
+                  <h3 id="toxicity"></h3>
+                </div>
+                <div class="col-md-3">
+                  <h2>Rating</h2>
+                  <h3 id="rating"></h3>
+                </div>
+                <div class="col-md-3">
+                  <h2>Issues</h2>
+                  <h3 id="issuesCount"></h3>
+                </div>
+              </div>
+            </div>
+            <div class="row" id="Graphs">
+              <ul class="nav nav-tabs">
+                <li class="nav-item">
+                  <button class="nav-link active" id="issuesDist-tab" data-bs-toggle="tab" data-bs-target="#issuesDist" type="button" role="tab" aria-controls="issuesDist" aria-selected="true">Issues Distribution</button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" id="userIssues-tab" data-bs-toggle="tab" data-bs-target="#userIssues" type="button" role="tab" aria-controls="userIssues" aria-selected="true">Trend of User Issues</button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" id="userSentiment-tab" data-bs-toggle="tab" data-bs-target="#userSentiment" type="button" role="tab" aria-controls="userSentiment" aria-selected="false">Trend of User Sentiment</button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" id="codeSmells-tab" data-bs-toggle="tab" data-bs-target="#codeSmells" type="button" role="tab" aria-controls="codeSmells" aria-selected="false">Trend of Code Smells</button>
+                </li>
+              </ul>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="issuesDist" role="tabpanel" aria-labelledby="issuesDist-tab">
+                  <canvas id="issuesDistChart"></canvas>
+                </div>
+                <div class="tab-pane fade" id="userIssues" role="tabpanel" aria-labelledby="userIssues-tab">
+                  <canvas id="issuesChart"></canvas>
+                </div>
+                <div class="tab-pane fade" id="userSentiment" role="tabpanel" aria-labelledby="userSentiment-tab">
+                  <div class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                    <div class="carousel-inner">
+                      <div class="carousel-item active">
+                        <canvas id="ratingChart"></canvas>
+                      </div>
+                      <div class="carousel-item">
+                        <canvas id="sentimentChart"></canvas>
+                      </div>
+                      <div class="carousel-item">
+                        <canvas id="toxicityChart"></canvas>
+                      </div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target=".carousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span></button>
+                    <button class="carousel-control-next" type="button" data-bs-target=".carousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span></button>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="codeSmells" role="tabpanel" aria-labelledby="codeSmells-tab">
+                  <div class="carousel slide" data-bs-ride="carousel" data-bs-interval="false" id="carousel-smells">
+                    <div class="carousel-inner">
+                      <div class="carousel-item active">
+                        <canvas id="packageSmells"></canvas>
+                      </div>
+                      <div class="carousel-item">
+                        <canvas id="methodSmells"></canvas>
+                      </div>
+                      <div class="carousel-item">
+                        <canvas id="classSmells"></canvas>
+                      </div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-smells" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span></button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-smells" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script src="script.js"></script>
+</body>
+</html>

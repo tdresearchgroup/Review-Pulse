@@ -1,0 +1,179 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.side-bar{
+  padding: 10px;
+  background-color: black;
+  color: white;
+}
+
+.main-content{
+  height: 100%;
+  background-color: white;
+  color: black;
+  overflow: auto;
+}
+
+.modal-dialog{
+  max-width: 80% !important;
+  margin: 30px auto !important;
+}
+
+.modal-body{
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+#Graphs{
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.form-select{
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0 22px 0;
+  display: inline-block;
+  border: none;
+  background: #f1f1f1;
+}
+
+
+.checkbox-menu li label {
+  display: block;
+  padding: 3px 10px;
+  clear: both;
+  font-weight: normal;
+  line-height: 1.42857143;
+  color: #333;
+  white-space: nowrap;
+  margin:0;
+  transition: background-color .4s ease;
+}
+.checkbox-menu li input {
+  margin: 0px 5px;
+  top: 2px;
+  position: relative;
+}
+
+.checkbox-menu li.active label {
+  background-color: #cbcbff;
+  font-weight:bold;
+}
+
+.checkbox-menu li label:hover,
+.checkbox-menu li label:focus {
+  background-color: #f5f5f5;
+}
+
+.checkbox-menu li.active label:hover,
+.checkbox-menu li.active label:focus {
+  background-color: #b8b8ff;
+}
+.dropdown-menu {
+  width: 300px !important;
+  max-height: 300px !important;
+}
+
+#versions{
+  overflow-y: scroll;
+}
+
+.dropdown>button{
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.bi-star-fill, .bi-star-half{
+  color: #FFD700;
+}
+
+.bi-emoji-smile, .bi-emoji-laughing{
+  color: #69d169;
+  font-size: 26px;
+}
+
+/* frown color */
+.bi-emoji-frown, .bi-emoji-angry{
+  color: #bd2600;
+  font-size: 26px;
+}
+
+.bi-emoji-neutral{
+  color: #868686;
+  font-size: 26px;
+}
+
+#tableModal{
+  color:  #333;
+}
+.btn {
+  margin-top: 10px;
+}
+
+#issuesDistChart{
+  height:900px !important;
+  width: auto !important;
+  margin: auto;
+}
+
+
+.carousel-control-prev,
+.carousel-control-next {
+  top: 10px !important; /* Adjust vertical position as needed */
+  width: auto !important; /* Adjust button width as needed */
+  height: fit-content !important; /* Adjust button height as needed */
+  padding: 5px 10px !important; /* Adjust button padding as needed */
+  background-color: rgba(0, 0, 0, 1) !important; /* Background color for buttons */
+  border: none; /* Remove button border */
+  border-radius: 5px; /* Make buttons circular */
+  font-size: 20px; /* Adjust font size as needed */
+  z-index: 1; /* Ensure buttons are above charts */
+}
+
+.carousel-control-prev {
+  left: 10px; /* Adjust horizontal position of previous button */
+}
+
+.carousel-control-next {
+  right: 10px; /* Adjust horizontal position of next button */
+}
+
+.dropdown-container{
+  display: flex;
+  justify-content: space-evenly;
+}
+
+
+/* Calendar time vs version time */
+
+/* Give an option of what the user wants to see */
+
+/* Looking at metrics */
+
+/* Be more clear with the goals */
+
+/* Thematic analysis */
+
+/* Dashboard */
+
+/* What would be interesting to present */
+
+/* Manage user reviews in away that they are useful for development process */
+
+/* How to make the user reviews useful for the development process */
