@@ -7,6 +7,11 @@ We propose a dashboard aimed at helping developers efficiently manage and analyz
 
 ![Overview of The Dashboard](https://github.com/tdresearchgroup/Review-Pulse/assets/40151410/ca1681ec-1c55-4136-b81d-67ab43e0eb71)
 
+## Charts Images
+<img width="904" alt="radar_chart" src="https://github.com/tdresearchgroup/Review-Pulse/assets/40151410/b1906459-94a4-4b71-bac5-148519586294">
+<img width="1155" alt="issues_line_chart" src="https://github.com/tdresearchgroup/Review-Pulse/assets/40151410/e335b473-914c-417e-9c8f-8a20916cef3b">
+<img width="1155" alt="rating_line_chart" src="https://github.com/tdresearchgroup/Review-Pulse/assets/40151410/0c8afe03-5290-4fd0-94f2-9609d1795b13">
+<img width="1155" alt="package_smells_line_chart" src="https://github.com/tdresearchgroup/Review-Pulse/assets/40151410/a9631bf5-03bf-433f-bb2e-7de825be0266">
 
 ## Replication Package Structure
 
