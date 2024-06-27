@@ -1,4 +1,4 @@
-# Review-Pulse
+# [Review-Pulse](https://tdresearchgroup.github.io/Review-Pulse/dashboard/)
 
 This repository contains the replication package and code for our ICSME 2024 tool demo submission.
 
