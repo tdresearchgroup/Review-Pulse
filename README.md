@@ -5,6 +5,9 @@ This repository contains the replication package and code for our ICSME 2024 too
 ## Introduction
 We propose a dashboard aimed at helping developers efficiently manage and analyze app reviews. Our tool leverages machine learning to classify user feedback into specific issue types, such as Crash, Design, Performance, and Functionality. It evaluates sentiment and toxicity levels in reviews and tracks code quality over time using metrics like code smells. The dashboard features interactive visualizations and filtering options, allowing developers to explore data, prioritize issues, and assess the impact of software updates. This package includes all resources needed to replicate our study and utilize the dashboard.
 
+![Overview of The Dashboard](https://github.com/tdresearchgroup/Review-Pulse/assets/40151410/ca1681ec-1c55-4136-b81d-67ab43e0eb71)
+
+
 ## Replication Package Structure
 
 - **Backend_Scripts**: Contains scripts for collecting, analyzing, and labeling reviews, and extracting code smells. This is the backbone of the dashboard.
