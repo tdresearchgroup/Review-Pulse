@@ -1,34 +1,61 @@
+var reviews;
+var issuesPerVersion;
+var artifacts_per_version;
+
 let issuesChart;
 let ratingChart;
 let sentimentChart;
 let toxicityChart;
 let packageSmellsChart;
 let methodSmellsChart;
-let classSmellsChart
+let classSmellsChart;
 let issuesDistChart;
 let selectedVersions = [];
 let selectedIssues = [];
 let allVersions = [];
-let allReviews = [];
-let allData = [];
+let allIssues = [];
+let smells = [];
+let filteredSmells = [];
 
+let releases = [];
 
 $(document).ready(function() {
     // load the reviews for Antenna Pod
-    $.getJSON("Applications_Reviews.json", function(reviews) {
-        allReviews = reviews;
-        renderReviews(reviews);
+    $.getJSON('data.json', function(data) {
+        smells = data;
+        filteredSmells = smells;
     });
 
-    $.getJSON("data.json", function(jsonData) {
-        allData = jsonData;
-        allVersions = allData['AntennaPod']['versions'];
+    $.getJSON('Applications_Reviews.json', function(data) {
+        reviews = data.filter((item) => item.app_name == 'Antenna Pod');
+
+        allVersions = reviews.map((item) => item.reviewCreatedVersion);
+        allVersions = [...new Set(allVersions)];
+        allVersions = allVersions.sort();
+        allVersions = allVersions.reverse();
+    
         allVersions.forEach(version => {
             // append a new li for each version
             let text = `<li><label><input type="checkbox" value="${version}">Version ${version}</label></li>`
             $('#versions').append(text);
         });
-        render(jsonData['AntennaPod']);
+
+        reviews.forEach(review => {
+            if(review.label && review.label.length > 0){
+                review.label.forEach(issue => {
+                    allIssues.push(issue[2]);
+                });
+            }
+        });
+
+        allIssues = [...new Set(allIssues)];
+
+        allIssues.forEach(issue => {
+            let text = `<li><label><input type="checkbox" value="${issue}">${issue}</label></li>`
+            $('#issues').append(text);
+        });
+
+        render(reviews);
     });
 });
 
@@ -113,33 +140,89 @@ $("#myTable").DataTable({
     ]
 });
 
-function renderReviews(reviews){
-    // fill the table with the reviews
-    let appReviews = reviews.filter((item) => item.app_name === 'Antenna Pod');
-    $('#myTable').DataTable().clear().rows.add(appReviews).draw(); 
+function updateData(data){
+    
+    issuesPerVersion = {};
+    
+    data.forEach(review => {
+        if(review.label && review.label.length > 0){
+            review.label.forEach(issue => {
+              let issue_name = issue[2];
+              if(issuesPerVersion[review.reviewCreatedVersion]){
+                  if(issuesPerVersion[review.reviewCreatedVersion][issue_name]){
+                      issuesPerVersion[review.reviewCreatedVersion][issue_name]++;
+                  } else {
+                      issuesPerVersion[review.reviewCreatedVersion][issue_name] = 1;
+                  }
+              } else {
+                  issuesPerVersion[review.reviewCreatedVersion] = {};
+                  issuesPerVersion[review.reviewCreatedVersion][issue_name] = 1;
+              }
+            });
+        }
+    });
+
+    
+    // sort the issues per version from smaller to larger version
+    issuesPerVersion = Object.keys(issuesPerVersion).sort().reduce(
+        (obj, key) => { 
+          obj[key] = issuesPerVersion[key];
+          return obj;
+        },
+        {}
+      );
+    
+    // for the given reviews, calculate the average score, sentiment and toxicity per version
+    artifacts_per_version = {};
+
+    data.forEach(review => {
+        if(artifacts_per_version[review.reviewCreatedVersion]){
+            artifacts_per_version[review.reviewCreatedVersion].avgScore += review.score;
+            artifacts_per_version[review.reviewCreatedVersion].avgSentiment += review.sentiment;
+            artifacts_per_version[review.reviewCreatedVersion].avgToxicity += review.toxicity;
+            artifacts_per_version[review.reviewCreatedVersion].count++;
+        } else {
+            artifacts_per_version[review.reviewCreatedVersion] = {
+                avgScore: review.score,
+                avgSentiment: review.sentiment,
+                avgToxicity: review.toxicity,
+                count: 1
+            };
+        }
+    });
+
+    artifacts_per_version = Object.keys(artifacts_per_version).sort().reduce(
+        (obj, key) => { 
+          obj[key] = artifacts_per_version[key];
+          return obj;
+        },
+        {}
+      );
 }
 
-function render(appData){
-    $('#sentiment').text((appData['sentiment'].reduce((acc, item) => acc + item, 0) / appData['sentiment'].length).toFixed(2));
-    $('#toxicity').text((appData['toxicity'].reduce((acc, item) => acc + item, 0) / appData['toxicity'].length).toFixed(2));
-    $('#rating').text((appData['rating'].reduce((acc, item) => acc + item, 0) / appData['rating'].length).toFixed(2));
-    let issueCount = 0;
-    issueCount += appData['crashes'].reduce((acc, item) => acc + item, 0);
-    issueCount += appData['performance'].reduce((acc, item) => acc + item, 0);
-    issueCount += appData['design'].reduce((acc, item) => acc + item, 0);
-    issueCount += appData['functionality'].reduce((acc, item) => acc + item, 0);
-    issueCount += appData['security'].reduce((acc, item) => acc + item, 0);
-    issueCount += appData['userExperience'].reduce((acc, item) => acc + item, 0);
-    issueCount += appData['developerRelated'].reduce((acc, item) => acc + item, 0);
-    $('#issuesCount').text(issueCount);
-    
+function render(data){
+    updateData(data);
+    // fill the table with the reviews
+    $('#myTable').DataTable().clear().rows.add(data).draw();
+    $('#sentiment').text((data.reduce((acc, item) => acc + item.sentiment, 0) / data.length).toFixed(2));
+    $('#toxicity').text((data.reduce((acc, item) => acc + item.toxicity, 0) / data.length).toFixed(2));
+    $('#rating').text((data.reduce((acc, item) => acc + item.score, 0) / data.length).toFixed(2));
+    $('#issuesCount').text(data.reduce((acc, item) => {
+        if(item.label && item.label.length > 0){
+            return acc + item.label.length;
+        }
+        return acc;
+    }
+    , 0));
+
+
     // create the chart
-    createIssuesDistributionChart(appData);
-    createChart(appData);
-    createArtifactsCharts(appData);
-    createPackageSmellsChart(appData);
-    createMethodSmellsChart(appData);
-    createClassSmellsChart(appData);
+    createChart();
+    createArtifactsCharts();
+    createPackageSmellsChart();
+    createMethodSmellsChart();
+    createClassSmellsChart();
+    createIssuesDistributionChart();
 }
 
 $('.allow-focus').on('click', function(event) {
@@ -170,49 +253,48 @@ $("#versions").on("change", "input[type='checkbox']", function() {
  });
 
 function filterData(versions, issues){
-    let filteredData = allData['AntennaPod'];
-    if(versions.length > 0){
-        filteredData = filterVersions(filteredData, versions);
+    if(versions.length == 0){
+        versions = allVersions;
     }
-    if(issues.length > 0){
-        filteredData = filterIssues(filteredData, issues);
+
+    let filterData = reviews.filter((item) => versions.includes(item.reviewCreatedVersion));
+    filteredSmells = smells.filter((item) => versions.includes(item.version));
+
+    if(issues.length == 0){
+        render(filterData);
+        return;
     }
-    render(filteredData);
+    
+    filterData = filterData.filter((item) => {
+        if(item.label && item.label.length > 0){
+            let labels = item.label.map((label) => label[2]);
+            return labels.some(label => issues.includes(label));
+        } else {
+            return false;
+        }
+    });
+
+    render(filterData);
 }
 
-function filterVersions(data, versions){
-    let filteredData = {};
-    filteredData['versions'] = versions;
-    filteredData['dates'] = versions.map((version) => data["dates"][data['versions'].indexOf(version)]);
-    filteredData['rating'] = versions.map((version) => data['rating'][data['versions'].indexOf(version)]);
-    filteredData['sentiment'] = versions.map((version) => data['sentiment'][data['versions'].indexOf(version)]);
-    filteredData['toxicity'] = versions.map((version) => data['toxicity'][data['versions'].indexOf(version)]);
-    filteredData['crashes'] = versions.map((version) => data['crashes'][data['versions'].indexOf(version)]);
-    filteredData['performance'] = versions.map((version) => data['performance'][data['versions'].indexOf(version)]);
-    filteredData['design'] = versions.map((version) => data['design'][data['versions'].indexOf(version)]);
-    filteredData['functionality'] = versions.map((version) => data['functionality'][data['versions'].indexOf(version)]);
-    filteredData['security'] = versions.map((version) => data['security'][data['versions'].indexOf(version)]);
-    filteredData['userExperience'] = versions.map((version) => data['userExperience'][data['versions'].indexOf(version)]);
-    filteredData['developerRelated'] = versions.map((version) => data['developerRelated'][data['versions'].indexOf(version)]);
-    filteredData['packageSmells'] = versions.map((version) => data['packageSmells'][data['versions'].indexOf(version)]);
-    filteredData['methodSmells'] = versions.map((version) => data['methodSmells'][data['versions'].indexOf(version)]);
-    filteredData['classSmells'] = versions.map((version) => data['classSmells'][data['versions'].indexOf(version)]);
-    return filteredData;
-}
+function createIssuesDistributionChart(){
+    const issuesDistributionCtx = document.getElementById('issuesDistChart');
+    
+    if(issuesDistChart != undefined){
+        issuesDistChart.destroy();
+    }
 
-
-function createIssuesDistributionChart(data){
-    let issuesDistributionCtx = document.getElementById('issuesDistChart');
-
-    let labels = ['crashes', 'performance', 'design', 'functionality', 'security', 'userExperience', 'developerRelated'];
-    let chartData = labels.map((label) => {
-        return data[label].reduce((acc, item) => acc + item, 0);
+    let labels = ['Crashing Issues', 'Performance Issues', 'UI / Design Issues', 'Functionality Issues', 'Security Related Issues', 'User Experience Issues', 'Developer Related Issues'];
+    let data = labels.map((label) => {
+        return issuesPerVersion ? Object.keys(issuesPerVersion).reduce((acc, key) => {
+            return acc + (issuesPerVersion[key][label] || 0);
+        }, 0) : 0;
     });
 
 
     let datasets = [{
         label: 'Types of issues',
-        data: chartData,
+        data: data,
         borderColor: [
             'rgba(54, 162, 235, 1)',
             'rgba(255, 206, 86, 1)',
@@ -241,10 +323,6 @@ function createIssuesDistributionChart(data){
         },
         options: {
             responsive: true,
-            interaction:{
-                mode: 'nearest',
-                intersect: false,
-            },
             scales:{
                 r:{
                     pointLabels:{
@@ -275,66 +353,82 @@ function createIssuesDistributionChart(data){
             }
         }
     }
-    console.log("creating a new chart");
-    if(issuesDistChart != undefined){
-        issuesDistChart.destroy();
-    }
+
     issuesDistChart = new Chart(issuesDistributionCtx, config);
 }
 
-function createChart(data) {
+function createChart() {
     let issuesCtx = document.getElementById('issuesChart');
 
     if(issuesChart != undefined){
         issuesChart.destroy();
     }
 
-    let labels = data['versions']
+    let labels = Object.keys(issuesPerVersion);
+    labels = labels.sort(customSort);
     // match labels to dates
-    let dates = data['dates']
+    let dates = labels.map((label) => {
+        let release = smells.find((item) => item.version == label);
+        // format the date as a string DD/MM/YYYY
+        return release ? release.date.split('T')[0] : '';
+    });
 
-    const chartData = {
+    const data = {
         labels: labels,
         datasets: [
             {
                 label: 'Crashing Issues',
-                data: data['crashes'],
+                data: Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['Crashing Issues'] || 0;
+                }),
                 borderColor: 'rgba(54, 162, 235, 1)',
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
             },
             {
                 label: 'Performance Issues',
-                data: data['performance'],
+                data: Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['Performance Issues'] || 0;
+                }),
                 borderColor: 'rgba(255, 206, 86, 1)',
                 backgroundColor: 'rgba(255, 206, 86, 0.2)',
             },
             {
                 label: 'UI / Design Issues',
-                data: data['design'],
+                data: Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['UI / Design Issues'] || 0;
+                }),
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
             },
             {
                 label: 'Functionality Issues',
-                data: data['functionality'],
+                data: Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['Functionality Issues'] || 0;
+                }),
                 borderColor: 'rgba(153, 102, 255, 1)',
                 backgroundColor: 'rgba(153, 102, 255, 0.2)',
             },
             {
                 label: 'Security Related Issues',
-                data: data['security'],
+                data:Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['Security Related Issues'] || 0;
+                }),
                 borderColor: 'rgba(255, 159, 64, 1)',
                 backgroundColor: 'rgba(255, 159, 64, 0.2)',
             },
             {
                 label: 'User Experience Issues',
-                data: data['userExperience'],
+                data:Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['User Experience Issues'] || 0;
+                }),
                 borderColor: 'rgba(25, 19, 132, 1)',
                 backgroundColor: 'rgba(25, 19, 132, 0.2)',
             },
             {
                 label: "Developer Related Issues",
-                data: data['developer'],
+                data: Object.keys(issuesPerVersion).map((key) => {
+                    return issuesPerVersion[key]['Developer Related Issues'] || 0;
+                }),
                 borderColor: 'rgba(255, 9, 132, 1)',
                 backgroundColor: 'rgba(255, 9, 132, 0.2)',
             }
@@ -344,7 +438,7 @@ function createChart(data) {
     
     let config = {
         type: 'line',
-        data: chartData,
+        data: data,
         options: {
           responsive: true,
           interaction:{
@@ -394,25 +488,36 @@ function createChart(data) {
     issuesChart = new Chart(issuesCtx, config);
 }
 
-function createArtifactsCharts(data){
-    let labels = data['versions'];
-    let dates = data['dates'];
-    createRatingChart(labels, dates, data['rating']);
-    createSentimentChart(labels, dates, data['sentiment']);
-    createToxicityChart(labels, dates, data['toxicity']);
+function createArtifactsCharts(){
+    let labels = Object.keys(artifacts_per_version);
+    labels = labels.sort(customSort);
+    // match labels to dates
+    let dates = labels.map((label) => {
+        let release = smells.find((item) => item.version == label);
+        console.log(release);
+        // format the date as a string DD/MM/YYYY
+        return release ? release.date.split('T')[0] : '';
+    });
+
+    createRatingChart(labels, dates);
+    createSentimentChart(labels, dates);
+    createToxicityChart(labels, dates);
 }
 
-function createRatingChart(labels, dates, data){
+function createRatingChart(labels, dates){
     let ratingCtx = document.getElementById('ratingChart');
     if(ratingChart != undefined){
         ratingChart.destroy();
     }
+
     const ratingData = {
         labels: labels,
         datasets: [
             {
                 label: 'Rating',
-                data: data,
+                data: Object.keys(artifacts_per_version).map((key) => {
+                    return artifacts_per_version[key]['avgScore'] / artifacts_per_version[key]['count'] || 0;
+                }),
                 borderColor: function(context) {
                     const chart = context.chart;
                     const {ctx, chartArea} = chart;
@@ -491,7 +596,7 @@ function createRatingChart(labels, dates, data){
     ratingChart = new Chart(ratingCtx, config);
 }
 
-function createSentimentChart(labels, dates, data){
+function createSentimentChart(labels, dates){
     let sentimentCtx = document.getElementById('sentimentChart');
     if(sentimentChart != undefined){
         sentimentChart.destroy();
@@ -502,7 +607,9 @@ function createSentimentChart(labels, dates, data){
         datasets: [
             {
                 label: 'Sentiment',
-                data: data,
+                data: Object.keys(artifacts_per_version).map((key) => {
+                    return artifacts_per_version[key]['avgSentiment'] / artifacts_per_version[key]['count'] || 0;
+                }),
                 borderColor: function(context) {
                     const chart = context.chart;
                     const {ctx, chartArea} = chart;
@@ -580,7 +687,7 @@ function createSentimentChart(labels, dates, data){
     sentimentChart = new Chart(sentimentCtx, config);
 }
 
-function createToxicityChart(labels, dates, data){
+function createToxicityChart(labels, dates){
     let toxicityCtx = document.getElementById('toxicityChart');
     if(toxicityChart != undefined){
         toxicityChart.destroy();
@@ -591,7 +698,9 @@ function createToxicityChart(labels, dates, data){
         datasets: [
             {
                 label: 'Toxicity',
-                data: data,
+                data: Object.keys(artifacts_per_version).map((key) => {
+                    return artifacts_per_version[key]['avgToxicity'] / artifacts_per_version[key]['count'] || 0;
+                }),
                 borderColor: function(context) {
                     const chart = context.chart;
                     const {ctx, chartArea} = chart;
@@ -670,22 +779,24 @@ function createToxicityChart(labels, dates, data){
     toxicityChart = new Chart(toxicityCtx, config);
 }
 
-function createPackageSmellsChart(data){
+function createPackageSmellsChart(){
     let packageCtx = document.getElementById('packageSmells');
 
     if(packageSmellsChart != undefined){
         packageSmellsChart.destroy();
     }
 
-    let labels = data['versions'];
-    let dates = data['dates'];
+    let labels = filteredSmells.map((item) => item.version);
+    let dates = filteredSmells.map((item) => item.date);
 
     let datasets = [{
         label: 'Package Level Smells',
-        data: data['packageSmells'],
+        data: filteredSmells.map((item) => item.packageSmells),
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
     }];
+
+    
 
     const packageData = {
         labels: labels,
@@ -733,7 +844,7 @@ function createPackageSmellsChart(data){
                 },
                 ticks: {
                     callback: function(value, index, values) {
-                        return dates[index];
+                        return dates[index].split('T')[0];
                     }
                 },
             },
@@ -744,22 +855,24 @@ function createPackageSmellsChart(data){
     packageSmellsChart = new Chart(packageCtx, config);    
 }
 
-function createMethodSmellsChart(data){
+function createMethodSmellsChart(){
     let methodCtx = document.getElementById('methodSmells');
 
     if(methodSmellsChart != undefined){
         methodSmellsChart.destroy();
     }
 
-    let labels = data['versions']
-    let dates = data['dates'];
+    let labels = filteredSmells.map((item) => item.version);
+    let dates = filteredSmells.map((item) => item.date);
 
     let datasets = [{
         label: 'Method Level Smells',
-        data: data['methodSmells'],
+        data: filteredSmells.map((item) => item.methodSmells),
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
     }];
+
+    
 
     const methodData = {
         labels: labels,
@@ -807,7 +920,7 @@ function createMethodSmellsChart(data){
                 },
                 ticks: {
                     callback: function(value, index, values) {
-                        return dates[index];
+                        return dates[index].split('T')[0];
                     }
                 },
             },
@@ -818,21 +931,24 @@ function createMethodSmellsChart(data){
       methodSmellsChart = new Chart(methodCtx, config);   
 }
 
-function createClassSmellsChart(data){
+function createClassSmellsChart(){
     let classCtx = document.getElementById('classSmells');
 
     if(classSmellsChart != undefined){
         classSmellsChart.destroy();
     }
 
-    let labels = data['versions'];
-    let dates = data['dates'];
+    let labels = filteredSmells.map((item) => item.version);
+    let dates = filteredSmells.map((item) => item.date);
+
     let datasets = [{
         label: 'Class Level Smells',
-        data: data['classSmells'],
+        data: filteredSmells.map((item) => item.classSmells),
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
     }];
+
+    
 
     const classData = {
         labels: labels,
@@ -880,7 +996,7 @@ function createClassSmellsChart(data){
                 },
                 ticks: {
                     callback: function(value, index, values) {
-                        return dates[index];
+                        return dates[index].split('T')[0];
                     }
                 },
             },
@@ -906,8 +1022,8 @@ function clearIssues(){
         $(this).closest("li").toggleClass("active", false);
     });
     
-    // selectedIssues = [];
-    // filterData(selectedVersions, selectedIssues);
+    selectedIssues = [];
+    filterData(selectedVersions, selectedIssues);
 }
 
 
